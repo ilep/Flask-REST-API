@@ -1,2 +1,2 @@
-# flask-restx-basic-app
+# Flask REST API
 A basic starter app using flask restx
