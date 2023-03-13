@@ -36,18 +36,12 @@ def init_db(mysql_engine):
         print(l_existing_tables)
 
 
-def delete_db(d_config, db_name=None):
-    
-    port = 3306
-    host = d_config.get('host')
-    user = d_config.get('user')
-    mdp = d_config.get('mdp')
+def delete_db(mysql_engine):
     
     try:
-        mysql_engine = create_engine('mysql+mysqlconnector://%s:%s@%s:%d/%s' % (user, mdp, host, port, db_name), encoding='utf-8')
-        mysql_engine.execute('drop database %s;' % db_name)
+        mysql_engine.execute('drop database %s;' % mysql_engine.url.database)
     except:
-        print("db not deleted")
+        print("db not dropped. May be already deleted ")
     else:
         print("db deleted")
 
@@ -57,24 +51,22 @@ parser = argparse.ArgumentParser(
                     description='This programs allows to init / delete database'
                     )
 
-parser.add_argument('varname', help="Name of the global env that contains the engine string") # FLAKS_REST_API_MYSQL_ENGINE_STR
 parser.add_argument('action', help="create / delete")
+parser.add_argument('varname', help="Name of the global env that contains the engine string") # FLAKS_REST_API_MYSQL_ENGINE_STR
 args = parser.parse_args()
 
 MYSQL_ENGINE_STR = os.environ[args.varname]
 MYSQL_ENGINE = create_engine(MYSQL_ENGINE_STR, encoding='utf-8', pool_pre_ping=True)
 
-
-print(f'MYSQL_ENGINE_STR = os.environ[{args.varname}] = {MYSQL_ENGINE_STR}')
-print(f'{args.action}')
-
-
 if args.action == "init":
     init_db(MYSQL_ENGINE)
 
+elif args.action == "delete":
+    delete_db(MYSQL_ENGINE)
 
-    
-# python .\db.py FLAKS_REST_API_MYSQL_ENGINE_STR init    
+
+# python .\db.py init FLAKS_REST_API_MYSQL_ENGINE_STR     
+# python .\db.py delete FLAKS_REST_API_MYSQL_ENGINE_STR     
 
     
 
