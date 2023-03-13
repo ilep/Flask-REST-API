@@ -6,15 +6,15 @@ Created on Fri Mar 10 19:55:29 2023
 """
 
 
-from errors import ExtendedAPI, errors
-from config import MYSQL_ENGINE, FLASK_ENV
+from .errors import ExtendedAPI, errors
+from .config import MYSQL_ENGINE, FLASK_ENV
 
 from flask import Flask, g
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask.json import jsonify
 
-from authentication import auth
+from .authentication import auth
 
 from sqlalchemy.orm import scoped_session, sessionmaker
 from greenlet import getcurrent as _get_ident
@@ -47,7 +47,7 @@ def hello_world():
     return jsonify({'message':'hello world'})
 
 
-from .resources import  TestResource
+# from .resources import  TestResource
 
 
 

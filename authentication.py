@@ -11,8 +11,8 @@ import jwt
 
 from flask import Blueprint, g, current_app, make_response
 from flask.json import jsonify
-from config import SECRET_KEY_JWT_ENCODE
-from db.tables import  check_blacklist, User
+from .config import SECRET_KEY_JWT_ENCODE
+from .db.tables import  check_blacklist, User
 
 from webargs import fields
 from webargs.flaskparser import use_args

@@ -1,3 +1,6 @@
+
+.\venv\Scripts\Activate.ps1
+
 set FLASK_APP=api
 set FLASK_ENV=development
 
