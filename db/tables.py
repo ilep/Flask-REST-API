@@ -5,6 +5,8 @@ Created on Thu May 27 10:05:11 2021
 @author: ilepoutre
 """
 
+from flask import current_app
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey, Column, Integer, String, Unicode, DateTime, Boolean, Text, Float
 from sqlalchemy import VARCHAR
@@ -15,6 +17,8 @@ from sqlalchemy.sql import func
 
 import datetime
 from sqlalchemy.orm import sessionmaker
+
+from .schemas import CompanySchema
 
 
 def has_id(row):
@@ -79,6 +83,31 @@ class Company(ExtendedBase, TimestampMixin):
     company_name = Column(String(100))
     siret = Column(String(25), unique=True, nullable=False)
     users = relationship("User", back_populates="company", cascade="all,delete-orphan")
+
+
+# @classmethod
+def get_or_create_company(d_company):
+
+    session = current_app.session
+    siret  = d_company.get('siret', None)
+
+    r = session.query(Company).filter(Company.siret == siret).one_or_none()
+
+    if r is not None: 
+        return r      
+    
+    else:
+        new_company = CompanySchema().load(**d_company)
+        
+        try:
+            session.add(new_company)
+            session.commit()
+            
+        except Exception:    
+            session.rollback()
+            return None
+        else:
+            return new_company        
 
 
 

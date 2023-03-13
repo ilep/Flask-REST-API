@@ -12,15 +12,15 @@ import jwt
 from flask import Blueprint, g, current_app, make_response, request
 from flask.json import jsonify
 from .config import SECRET_KEY_JWT_ENCODE, BCRYPT_LOG_ROUNDS
-from .db.tables import  check_blacklist, User
+from .db.tables import  check_blacklist, User, Company
 
 from webargs import fields
 from webargs.flaskparser import use_args
 
 from .db.schemas import UserSchema  
-from .db.actions import create_or_retrieve_entreprise
-from .db import get_or_create
 
+from .db import get_or_create
+from .db.tables import get_or_create_company
 
 auth = Blueprint('auth', __name__)
 
@@ -113,7 +113,7 @@ def register():
         encrypted_password = g.bcrypt.generate_password_hash(password, BCRYPT_LOG_ROUNDS).decode()
         first_name = d_request.get('first_name', None)
         last_name = d_request.get('last_name', None)
-        phone = d_request.get('phone', None)  
+        phone = d_request.get('phone', None)
         category = d_request.get('category', init_category(email.lower())) 
         
         d_user = {
@@ -126,8 +126,8 @@ def register():
         }
         
         if category.lower() != 'staff': 
-            d_entreprise = {'company_name': d_request.get('company', {}).get('company_name',None), 'siret': d_request.get('company', {}).get('siret',None)}            
-            company = create_or_retrieve_entreprise(d_entreprise, session=session)
+            d_company = {'company_name': d_request.get('company', {}).get('company_name',None), 'siret': d_request.get('company', {}).get('siret',None)}            
+            company = get_or_create_company(d_company)
 
         else:
             company = None
@@ -166,8 +166,7 @@ def register():
             
             return make_response(jsonify(responseObject), 200)            
 
-    
-    # user already exist in db
+    # user already exists in db
     else:
         return make_response(jsonify({'message': r'User already exists. Please Log in.'}), 409)
 
