@@ -29,7 +29,7 @@ def _extract_model_params(defaults, **kwargs):
     return ret
 
 
-def _create_object_from_params(session, model, lookup, params, lock=False):
+def _create_object_from_params_v1(session, model, lookup, params, lock=False):
     obj = model(**params)
     
     session.add(obj)
@@ -50,7 +50,7 @@ def _create_object_from_params(session, model, lookup, params, lock=False):
     else:
         return obj, True
 
-def _create_object_from_params_ivan(session, model, lookup, params, lock=False):
+def _create_object_from_params(session, model, lookup, params, lock=False):
     obj = model(**params)
     
     session.add(obj)
@@ -74,6 +74,15 @@ def _create_object_from_params_ivan(session, model, lookup, params, lock=False):
         return obj, True
 
 
+def get_or_create_v1(session, model, defaults=None, **kwargs):
+
+    try:
+        return session.query(model).filter_by(**kwargs).one(), False
+    except NoResultFound:
+        params = _extract_model_params(defaults, **kwargs)
+        return _create_object_from_params_v1(session, model, kwargs, params)
+
+
 def get_or_create(session, model, defaults=None, **kwargs):
 
     try:
@@ -81,18 +90,6 @@ def get_or_create(session, model, defaults=None, **kwargs):
     except NoResultFound:
         params = _extract_model_params(defaults, **kwargs)
         return _create_object_from_params(session, model, kwargs, params)
-
-
-def get_or_create_ivan(session,
-                  model,
-                  defaults=None,
-                  **kwargs):
-
-    try:
-        return session.query(model).filter_by(**kwargs).one(), False
-    except NoResultFound:
-        params = _extract_model_params(defaults, **kwargs)
-        return _create_object_from_params_ivan(session, model, kwargs, params)
 
 
 def update_or_create(session, model, defaults=None, **kwargs):

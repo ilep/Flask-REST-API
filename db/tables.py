@@ -94,9 +94,9 @@ class User(ExtendedBase, TimestampMixin):
     email = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False, default="*")
     first_name = Column(String(50))
-    lasy_name = Column(String(50))
+    last_name = Column(String(50))
     phone = Column(String(20))
-    category = Column(String(25), default="default")    
+    category = Column(String(25), default="client")    
     is_activated = Column(Boolean, nullable=False, default=False)
     is_email_confirmed = Column(Boolean, nullable=False, default=False)
 

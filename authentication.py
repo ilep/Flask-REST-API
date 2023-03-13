@@ -9,15 +9,17 @@ Created on Mon Mar 13 11:32:51 2023
 import datetime
 import jwt
 
-from flask import Blueprint, g, current_app, make_response
+from flask import Blueprint, g, current_app, make_response, request
 from flask.json import jsonify
-from .config import SECRET_KEY_JWT_ENCODE
+from .config import SECRET_KEY_JWT_ENCODE, BCRYPT_LOG_ROUNDS
 from .db.tables import  check_blacklist, User
 
 from webargs import fields
 from webargs.flaskparser import use_args
 
-
+from .db.schemas import UserSchema  
+from .db.actions import create_or_retrieve_entreprise
+from .db import get_or_create
 
 
 auth = Blueprint('auth', __name__)
@@ -73,6 +75,103 @@ def email_exists(args):
     
     return make_response(jsonify(dresult), 200)    
     
+
+
+
+def init_category(email):
+    
+    l_staff = ['@company.fr']
+    
+    is_staff = any([email.endswith(end) for end in l_staff])    
+    
+    if is_staff:
+        return 'staff'
+    else:
+        return 'client'
+
+
+@auth.route('/auth/register', methods=['POST'])
+def register():
+    
+    d_request = request.get_json()
+    
+    errors = UserSchema().validate(d_request)
+    if errors != {}:
+        return make_response(errors, 401)
+        
+    session = current_app.session   
+
+    # does the user exist in db?
+    try:
+        q = session.query(User).filter(User.email == d_request.get('email')).one()
+        
+    # user with given email not found ==> creation with company
+    except:
+
+        email = d_request.get('email')
+        password = d_request.get('password')
+        encrypted_password = g.bcrypt.generate_password_hash(password, BCRYPT_LOG_ROUNDS).decode()
+        first_name = d_request.get('first_name', None)
+        last_name = d_request.get('last_name', None)
+        phone = d_request.get('phone', None)  
+        category = d_request.get('category', init_category(email.lower())) 
+        
+        d_user = {
+            'first_name': first_name, 
+            'email':email,
+            'password': encrypted_password,
+            'last_name': last_name, 
+            'category':category, 
+            'phone': phone
+        }
+        
+        if category.lower() != 'staff': 
+            d_entreprise = {'company_name': d_request.get('company', {}).get('company_name',None), 'siret': d_request.get('company', {}).get('siret',None)}            
+            company = create_or_retrieve_entreprise(d_entreprise, session=session)
+
+        else:
+            company = None
+            
+        if company is not None:
+            d_user['company'] = company 
+        
+        
+        # user creation
+        try:
+            user, user_created = get_or_create(session, User, email=email, defaults=d_user)
+            if user is None:
+                message = 'get_or_create: user is None'
+                make_response(jsonify({'message': message}), 500)
+        except:
+            message = 'Error in get_or_create'
+            make_response(jsonify({'message': message}), 500)
+            
+        else:
+            assert user_created
+            assert user is not None
+        
+            text = '''
+            ==================================== \n
+            ACCOUNT REGISTERED / TO BE VALIDATED \n
+            ==================================== \n
+            Account registered (email = %s) \n
+            Please review and validate asap. \n
+            ''' % (email)
+            
+            # alert email sent to staff
+            # send_email_sendgrid(text=text, from_=NOREPLY_EMAIL, to=STAFF_EMAIL, subject="Account activation pending...")
+            
+            auth_token = encode_auth_token(user.id)
+            responseObject = {'message': 'Successfully registered.', 'data':{'auth_token': auth_token}} 
+            
+            return make_response(jsonify(responseObject), 200)            
+
+    
+    # user already exist in db
+    else:
+        return make_response(jsonify({'message': r'User already exists. Please Log in.'}), 409)
+
+   
 
 
 

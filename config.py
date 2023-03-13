@@ -13,6 +13,7 @@ SECRET_KEY_JWT_ENCODE = os.environ.get('SECRET_KEY_JWT_ENCODE', None)
 MYSQL_ENGINE_STR = os.environ.get('MYSQL_ENGINE_STR', None)
 MYSQL_ENGINE = get_engine_from_engine_str(MYSQL_ENGINE_STR)
 
+BCRYPT_LOG_ROUNDS = None
 
 
 
