@@ -85,31 +85,6 @@ class Company(ExtendedBase, TimestampMixin):
     users = relationship("User", back_populates="company", cascade="all,delete-orphan")
 
 
-# @classmethod
-def get_or_create_company(d_company):
-
-    session = current_app.session
-    siret  = d_company.get('siret', None)
-
-    r = session.query(Company).filter(Company.siret == siret).one_or_none()
-
-    if r is not None: 
-        return r      
-    
-    else:
-        new_company = CompanySchema().load(**d_company)
-        
-        try:
-            session.add(new_company)
-            session.commit()
-            
-        except Exception:    
-            session.rollback()
-            return None
-        else:
-            return new_company        
-
-
 
 
 class User(ExtendedBase, TimestampMixin):

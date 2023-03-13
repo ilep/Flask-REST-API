@@ -90,7 +90,7 @@ def get_or_create(session, model, defaults=None, **kwargs):
     except NoResultFound:
         params = _extract_model_params(defaults, **kwargs)
         return _create_object_from_params(session, model, kwargs, params)
-
+        
 
 def update_or_create(session, model, defaults=None, **kwargs):
     defaults = defaults or {}

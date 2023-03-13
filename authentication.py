@@ -20,7 +20,7 @@ from webargs.flaskparser import use_args
 from .db.schemas import UserSchema  
 
 from .db import get_or_create
-from .db.tables import get_or_create_company
+# from .db.tables import get_or_create_company
 
 auth = Blueprint('auth', __name__)
 
@@ -126,8 +126,11 @@ def register():
         }
         
         if category.lower() != 'staff': 
-            d_company = {'company_name': d_request.get('company', {}).get('company_name',None), 'siret': d_request.get('company', {}).get('siret',None)}            
-            company = get_or_create_company(d_company)
+            
+            company_name = d_request.get('company', {}).get('company_name',None)
+            siret =  d_request.get('company', {}).get('siret',None)
+            d_company = {'company_name': company_name, 'siret':siret}       
+            company = get_or_create(session, Company, siret=siret, defaults=d_company)
 
         else:
             company = None
