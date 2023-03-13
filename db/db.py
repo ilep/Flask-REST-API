@@ -27,9 +27,15 @@ def init_db(mysql_engine):
         print('db already created')
         
         l_databases = [d[0] for d in mysql_engine.execute("SHOW DATABASES;")]
+        # with mysql_engine.connect() as conn:
+        #     l_databases = conn.execute('show databases;')        
+        
         assert mysql_engine.url.database in l_databases   
         
         existing_tables = mysql_engine.execute('show tables;')
+        # with mysql_engine.connect() as conn:
+        #     existing_tables = conn.execute('show tables;')
+        
         l_existing_tables = [d[0] for d in existing_tables]
         
         print('existing tables:')
@@ -56,7 +62,7 @@ parser.add_argument('varname', help="Name of the global env that contains the en
 args = parser.parse_args()
 
 MYSQL_ENGINE_STR = os.environ[args.varname]
-MYSQL_ENGINE = create_engine(MYSQL_ENGINE_STR, encoding='utf-8', pool_pre_ping=True)
+MYSQL_ENGINE = create_engine(MYSQL_ENGINE_STR, pool_pre_ping=True) # encoding='utf-8'
 
 if args.action == "init":
     init_db(MYSQL_ENGINE)
