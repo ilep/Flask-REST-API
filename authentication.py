@@ -218,8 +218,55 @@ def login():
                 return make_response(jsonify(responseObject), 200)
 
 
+@auth.route('/auth/status', methods=['GET'])
+def status():
 
+    auth_header = request.headers.get('Authorization')
     
+    if auth_header:
+        auth_token = auth_header.split(" ")[1]
+    else:
+        auth_token = ''
+
+    if auth_token:
+        resp = decode_auth_token(auth_token)
+        if not isinstance(resp, str):
+            session = current_app.session
+            try:
+                user = session.query(User).filter(User.id == resp).one()
+                session.commit()
+            except:
+                return jsonify({"message": "error"})
+            else:
+                
+                responseObject = {
+                    'status': 'success',
+                    'data': {
+                        'user_id': user.id,
+                        'email': user.email,
+                        'created': user.created,
+                        'category': user.category
+                    }
+                }
+                session.close()
+                return jsonify(responseObject)
+        
+        
+        else:
+            responseObject = {
+                'status': 'fail',
+                'message': resp
+            }
+            return jsonify(responseObject)
+    
+    else:
+        responseObject = {
+            'status': 'fail',
+            'message': 'Provide a valid auth token.'
+        }
+        return jsonify(responseObject)
+    
+
     
     
 
