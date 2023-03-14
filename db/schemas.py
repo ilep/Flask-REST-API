@@ -45,16 +45,14 @@ class UserSchema(Schema):
     id = fields.Integer()
     name = fields.Str()
     email = fields.Email(allow_none=False, required=True)
-    password = fields.Str()
-    
+    password = fields.Str()    
     first_name = fields.Str(required=True, allow_none=True)
-    last_name = fields.Str(required=True,allow_none=True)
-    
+    last_name = fields.Str(required=True,allow_none=True)    
     phone = fields.Str(required=True, allow_none=True)
-    category = fields.Str()
     is_activated = fields.Boolean()
     is_email_confirmed = fields.Boolean()
-    
+    created = fields.DateTime()
+
 
     company_id = fields.Integer()    
     company = fields.Nested(CompanySchema, required=True)

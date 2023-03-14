@@ -242,18 +242,14 @@ def status():
                 return jsonify({"message": "error"})
             else:
                 
+                data_status = UserSchema(only=("id", "email", "created", "roles",)).dump(user)
+                
                 responseObject = {
                     'status': 'success',
-                    'data': {
-                        'user_id': user.id,
-                        'email': user.email,
-                        'created': user.created,
-                        'category': user.category
-                    }
+                    'data': data_status
                 }
                 session.close()
                 return jsonify(responseObject)
-        
         
         else:
             responseObject = {
