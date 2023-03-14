@@ -9,6 +9,8 @@ Created on Mon Mar 13 11:32:51 2023
 import datetime
 import jwt
 import json
+from functools import wraps
+
 
 from flask import Blueprint, g, current_app, make_response, request, render_template
 from flask.json import jsonify
@@ -389,6 +391,55 @@ def confirm_reset():
             
             return make_response(jsonify(responseObject), 200)  
 
+
+
+def login_required(func):
+    
+    """ 
+    Execute function (and thus return sensitive jsonify data) if request contains valid access token. 
+    Else return a unauthorized 401 response
+    """
+    @wraps(func)
+    def decorated_route_function(*args, **kwargs):
+        
+        auth_header = request.headers.get('Authorization')
+        
+        if auth_header:
+            auth_token = auth_header.split(" ")[1]
+        else:
+            auth_token = ''
+        
+        auth_token = auth_token.strip().rstrip()
+
+        # Bearer <TOKEN> in authorizarion header        
+        if auth_token != '':
+            decoded_user_id = decode_auth_token(auth_token)
+            # decoding token works
+            if not isinstance(decoded_user_id, str):
+                
+                session = current_app.session
+                session.expire_on_commit = False
+                
+                try:
+                    user = session.query(User).outerjoin(Company).filter(User.id == decoded_user_id).one()
+                    setattr(decorated_route_function, 'user', user)
+                    assert user.id == decoded_user_id
+                except:
+                    return make_response(jsonify({'message':'Internal server error' }), 500)
+                else:
+                    if not user.is_activated:
+                        return make_response(jsonify({'message':'User is not yet validated', 'status': 'Unauthorized'}), 401)
+                    else:
+                        return func(*args, **kwargs)
+                    
+            # resp is str <==> bad token
+            else:
+                return make_response(jsonify({'message':decoded_user_id, 'status': 'Unauthorized'}), 401) 
+
+        else:
+            return make_response(jsonify({'message':'No authorization header', 'status': 'Unauthorized'}), 401)    
+        
+    return decorated_route_function
 
 
 
