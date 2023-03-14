@@ -127,10 +127,12 @@ def register():
             role, _ = get_or_create(session=session, model=Role, defaults=None, name=init_role(email))
         except:
             role = None
+            not_staff= True
+        else:
+            d_user['roles'] = [role]
+            not_staff = role.name.lower() != 'staff'
         
-        d_user['roles'] = [role]
-        
-        if role.name.lower() != 'staff': 
+        if not_staff: 
             company_name = d_request.get('company', {}).get('company_name',None)
             siret =  d_request.get('company', {}).get('siret',None)
             d_company = {'company_name': company_name, 'siret':siret}       
