@@ -16,11 +16,12 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask.json import jsonify
 
-from .authentication import auth
+from .authentication import auth, login_required
 
 from sqlalchemy.orm import scoped_session, sessionmaker
 from greenlet import getcurrent as _get_ident
 
+from .db.schemas import UserSchema
 
 app = Flask(__name__)
 CORS(app)
@@ -48,6 +49,14 @@ def before_request():
 @app.route('/')
 def hello_world():  
     return jsonify({'message':'hello world'})
+
+
+@app.route('/user-only')
+@login_required
+def user_only_route():  
+    data = UserSchema(only=("id", "email", "created", "roles",)).dump(user_only_route.user)
+    return jsonify({'message':'Your are logged in', 'data': data})
+
 
 # from .resources import  TestResource
 

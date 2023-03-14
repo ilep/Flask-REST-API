@@ -22,6 +22,7 @@ from webargs.flaskparser import use_args
 
 from .db.schemas import UserSchema  
 from .db import get_or_create
+from sqlalchemy.orm import joinedload
 
 from itsdangerous import URLSafeTimedSerializer
     
@@ -421,7 +422,8 @@ def login_required(func):
                 session.expire_on_commit = False
                 
                 try:
-                    user = session.query(User).outerjoin(Company).filter(User.id == decoded_user_id).one()
+                    # user = session.query(User).outerjoin(Company).filter(User.id == decoded_user_id).one()
+                    user = session.query(User).options(joinedload(User.company)).filter(User.id == decoded_user_id).one()
                     setattr(decorated_route_function, 'user', user)
                     assert user.id == decoded_user_id
                 except:
