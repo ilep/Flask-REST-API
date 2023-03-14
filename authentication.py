@@ -8,6 +8,7 @@ Created on Mon Mar 13 11:32:51 2023
 
 import datetime
 import jwt
+import json
 
 from flask import Blueprint, g, current_app, make_response, request
 from flask.json import jsonify
@@ -18,8 +19,9 @@ from webargs import fields
 from webargs.flaskparser import use_args
 
 from .db.schemas import UserSchema  
-
 from .db import get_or_create
+
+
 
 auth = Blueprint('auth', __name__)
 
@@ -174,7 +176,46 @@ def register():
    
 
 
+# decorator webargs du coup
+@auth.route('/auth/login', methods=['POST'])
+def login():
+    
+    d_request = json.loads(request.data.decode("utf-8"))
+    
+    session = current_app.session
 
+    try:
+        user = session.query(User).filter(User.email == d_request.get('email')).one()
+    
+    # no user found
+    except:
+        
+        responseObject = {
+            'message': 'User does not exist.'
+        }
+        return make_response(jsonify(responseObject), 404)
+    
+    # user in db
+    else:
+        # user must be activated
+        if not user.is_activated:
+            responseObject = {
+                'message': 'Utilisateur non activé'
+            }            
+            return make_response(jsonify(responseObject), 401)
+        
+        else:
+            
+            # check password 
+            if not g.bcrypt.check_password_hash(user.password, d_request.get('password')):   
+                responseObject = {"message": 'Mot de passe incorrect'}
+                return make_response(jsonify(responseObject), 401)
+            
+            # password correct
+            else:    
+                auth_token = encode_auth_token(user.id)
+                responseObject = {"message": 'Successfully logged in', "data": {'auth_token': auth_token}}
+                return make_response(jsonify(responseObject), 200)
 
 
 
