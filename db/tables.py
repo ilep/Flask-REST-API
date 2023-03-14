@@ -127,11 +127,9 @@ class BlacklistToken(ExtendedBase):
 def check_blacklist(auth_token, MYSQL_ENGINE):
     
     '''
-    auth_token ='fddeefger5'
     '''
+    
     # check whether auth token has been blacklisted
-    
-    
     Session = sessionmaker(bind = MYSQL_ENGINE)
     session = Session()
     

@@ -13,7 +13,7 @@ import json
 from flask import Blueprint, g, current_app, make_response, request
 from flask.json import jsonify
 from .config import SECRET_KEY_JWT_ENCODE, BCRYPT_LOG_ROUNDS
-from .db.tables import  check_blacklist, User, Company
+from .db.tables import  check_blacklist, User, Company, BlacklistToken
 
 from webargs import fields
 from webargs.flaskparser import use_args
@@ -268,6 +268,45 @@ def status():
     
 
     
+
+@auth.route('/auth/logout', methods=['POST'])
+def logout():
+    
+    auth_header = request.headers.get('Authorization')
+    
+    if auth_header:
+        auth_token = auth_header.split(" ")[1]
+    else:
+        auth_token = ''
+    
+    if auth_token:    
+        blacklist_token = BlacklistToken(token=auth_token)
+        try:
+            session = current_app.session  
+            session.add(blacklist_token)
+            session.commit()
+            session.close()
+            
+        except Exception as e:
+            responseObject = {
+                'status': 'fail',
+                'message': e
+            }
+            return jsonify(responseObject)
+            
+        else:
+            responseObject = {
+                'status': 'success',
+                'message': 'Successfully logged out.'
+            
+            }
+            return jsonify(responseObject)
+    else:
+        responseObject = {
+            'status': 'fail',
+            'message': 'No token given'
+        }
+        return jsonify(responseObject)
     
 
 
