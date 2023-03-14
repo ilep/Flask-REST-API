@@ -10,6 +10,7 @@ import argparse
 
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy import create_engine
+from sqlalchemy import text
 
 from tables import Base
 
@@ -26,26 +27,22 @@ def init_db(mysql_engine):
     else:
         print('db already created')
         
-        l_databases = [d[0] for d in mysql_engine.execute("SHOW DATABASES;")]
-        # with mysql_engine.connect() as conn:
-        #     l_databases = conn.execute('show databases;')        
+        with mysql_engine.connect() as conn:
+            l_databases = [d[0] for d in conn.execute(text("SHOW DATABASES;"))]
+            assert mysql_engine.url.database in l_databases   
         
-        assert mysql_engine.url.database in l_databases   
-        
-        existing_tables = mysql_engine.execute('show tables;')
-        # with mysql_engine.connect() as conn:
-        #     existing_tables = conn.execute('show tables;')
-        
-        l_existing_tables = [d[0] for d in existing_tables]
-        
-        print('existing tables:')
-        print(l_existing_tables)
+        with mysql_engine.connect() as conn:
+            existing_tables = conn.execute(text('SHOW TABLES;'))
+            l_existing_tables = [d[0] for d in existing_tables]    
+            print('existing tables:')
+            print(l_existing_tables)
 
 
 def delete_db(mysql_engine):
     
     try:
-        mysql_engine.execute('drop database %s;' % mysql_engine.url.database)
+        with mysql_engine.connect() as conn:
+            conn.execute(text('drop database %s;' % mysql_engine.url.database))
     except:
         print("db not dropped. May be already deleted ")
     else:
@@ -71,8 +68,8 @@ elif args.action == "delete":
     delete_db(MYSQL_ENGINE)
 
 
-# python .\db.py init FLAKS_REST_API_MYSQL_ENGINE_STR     
-# python .\db.py delete FLAKS_REST_API_MYSQL_ENGINE_STR     
+# python db.py init FLASK_REST_API_MYSQL_ENGINE_STR     
+# python db.py delete FLASK_REST_API_MYSQL_ENGINE_STR     
 
     
 

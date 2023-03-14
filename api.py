@@ -5,11 +5,13 @@ Created on Fri Mar 10 19:55:29 2023
 @author: ilepoutre
 """
 
+import sys
+print("Running with %s" % sys.executable)
 
 from .errors import ExtendedAPI, errors
 from .config import MYSQL_ENGINE, FLASK_ENV
 
-from flask import Flask, g
+from flask import Flask, g, _app_ctx_stack
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask.json import jsonify
@@ -30,6 +32,7 @@ app.config['ENV'] = FLASK_ENV
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=MYSQL_ENGINE)
 app.session = scoped_session(SessionLocal, scopefunc=_get_ident)
+# app.session = scoped_session(SessionLocal, scopefunc=_app_ctx_stack.__ident_func__)
 
 
 @app.teardown_appcontext
@@ -45,7 +48,6 @@ def before_request():
 @app.route('/')
 def hello_world():  
     return jsonify({'message':'hello world'})
-
 
 # from .resources import  TestResource
 

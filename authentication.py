@@ -20,7 +20,6 @@ from webargs.flaskparser import use_args
 from .db.schemas import UserSchema  
 
 from .db import get_or_create
-# from .db.tables import get_or_create_company
 
 auth = Blueprint('auth', __name__)
 
@@ -92,7 +91,7 @@ def init_category(email):
 
 @auth.route('/auth/register', methods=['POST'])
 def register():
-    
+
     d_request = request.get_json()
     
     errors = UserSchema().validate(d_request)
@@ -101,11 +100,11 @@ def register():
         
     session = current_app.session   
 
-    # does the user exist in db?
+    # Does the user exist in db?
     try:
         q = session.query(User).filter(User.email == d_request.get('email')).one()
-        
-    # user with given email not found ==> creation with company
+    
+    # User with given email not found ==> creation (with its company if not a staff and company not already in db)
     except:
 
         email = d_request.get('email')
@@ -130,29 +129,29 @@ def register():
             company_name = d_request.get('company', {}).get('company_name',None)
             siret =  d_request.get('company', {}).get('siret',None)
             d_company = {'company_name': company_name, 'siret':siret}       
-            company = get_or_create(session, Company, siret=siret, defaults=d_company)
-
+            company, company_created = get_or_create(session=session, model=Company, defaults=d_company, siret=siret)
         else:
             company = None
-            
+        
         if company is not None:
             d_user['company'] = company 
-        
         
         # user creation
         try:
             user, user_created = get_or_create(session, User, email=email, defaults=d_user)
             if user is None:
-                message = 'get_or_create: user is None'
+                message = 'get_or_create / user is None'
                 make_response(jsonify({'message': message}), 500)
         except:
-            message = 'Error in get_or_create'
+            message = 'Error get_or_create'
             make_response(jsonify({'message': message}), 500)
-            
+        
+        # success            
         else:
             assert user_created
             assert user is not None
         
+            # Email sent to staff to validate user as soon as possible
             text = '''
             ==================================== \n
             ACCOUNT REGISTERED / TO BE VALIDATED \n
@@ -161,15 +160,14 @@ def register():
             Please review and validate asap. \n
             ''' % (email)
             
-            # alert email sent to staff
             # send_email_sendgrid(text=text, from_=NOREPLY_EMAIL, to=STAFF_EMAIL, subject="Account activation pending...")
             
             auth_token = encode_auth_token(user.id)
             responseObject = {'message': 'Successfully registered.', 'data':{'auth_token': auth_token}} 
             
             return make_response(jsonify(responseObject), 200)            
-
-    # user already exists in db
+        
+    # User already exists in db
     else:
         return make_response(jsonify({'message': r'User already exists. Please Log in.'}), 409)
 

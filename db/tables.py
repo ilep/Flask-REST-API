@@ -5,7 +5,6 @@ Created on Thu May 27 10:05:11 2021
 @author: ilepoutre
 """
 
-from flask import current_app
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey, Column, Integer, String, Unicode, DateTime, Boolean, Text, Float
@@ -18,7 +17,6 @@ from sqlalchemy.sql import func
 import datetime
 from sqlalchemy.orm import sessionmaker
 
-from .schemas import CompanySchema
 
 
 def has_id(row):
@@ -51,7 +49,7 @@ class ExtendedBase(Base):
     
     def __repr__(self, tab=0):
         
-        str_repr = "<%s>" % self.__class__.__name__
+        str_repr = "<%s>\n" % self.__class__.__name__
         decal = ' ' *  tab * 4
             
         for c in [column.key for column in self.__table__.columns]:

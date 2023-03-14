@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 def get_engine_from_engine_str(engine_str):
     try:
-        mysql_engine = create_engine(engine_str, encoding='utf-8', pool_pre_ping=True)
+        mysql_engine = create_engine(engine_str, pool_pre_ping=True)
         assert database_exists(mysql_engine.url)
     except: 
         mysql_engine = None
@@ -51,14 +51,12 @@ def _create_object_from_params_v1(session, model, lookup, params, lock=False):
         return obj, True
 
 def _create_object_from_params(session, model, lookup, params, lock=False):
+
     obj = model(**params)
     
     session.add(obj)
     try:
-        # with session.begin_nested():
         session.commit()
-    
-    # except IntegrityError:
     except:
         session.rollback()
         query = session.query(model).filter_by(**lookup)
