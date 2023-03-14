@@ -10,9 +10,9 @@ import datetime
 import jwt
 import json
 
-from flask import Blueprint, g, current_app, make_response, request
+from flask import Blueprint, g, current_app, make_response, request, render_template
 from flask.json import jsonify
-from .config import SECRET_KEY_JWT_ENCODE, BCRYPT_LOG_ROUNDS
+from .config import SECRET_KEY_JWT_ENCODE, BCRYPT_LOG_ROUNDS, SECRET_KEY_RESET_PWD, reset_pwd_url, NOREPLY_EMAIL
 from .db.tables import  check_blacklist, User, Company, BlacklistToken
 
 from webargs import fields
@@ -21,6 +21,8 @@ from webargs.flaskparser import use_args
 from .db.schemas import UserSchema  
 from .db import get_or_create
 
+from itsdangerous import URLSafeTimedSerializer
+    
 
 
 auth = Blueprint('auth', __name__)
@@ -308,6 +310,96 @@ def logout():
         }
         return jsonify(responseObject)
     
+
+
+
+
+@auth.route('/auth/request-reset', methods=["POST"]) 
+def request_reset():
+    '''
+    '''
+    email_to_send_reset_pwd_link = request.json['email']
+    session = current_app.session
+    
+    try:
+        # Does user exist?
+        q = session.query(User).filter(User.email == email_to_send_reset_pwd_link).one() 
+
+    except:
+        responseObject = {'message': 'User does not exist.'}
+        return make_response(jsonify(responseObject), 401)
+    
+    else:
+        
+        ts = URLSafeTimedSerializer(SECRET_KEY_RESET_PWD)
+        token = ts.dumps(email_to_send_reset_pwd_link, salt='reset-pwd')
+        tokenized_reset_pwd_url = reset_pwd_url + ('?token=%s' % token)
+        
+        try:
+            # html = render_template('reset_password.html', reset_pwd_url=tokenized_reset_pwd_url)
+            # send_email_sendgrid(html=html, from_=NOREPLY_EMAIL, to=email_to_send_reset_pwd_link, subject="Reset pwd")  
+            pass
+        except:
+            responseObject = {'message': 'Error when sending email' }
+            return make_response(jsonify(responseObject), 500)
+        else:
+            
+            responseObject = {'message': 'reset email sent at %s' % email_to_send_reset_pwd_link}
+            return make_response(jsonify(responseObject), 200)    
+    
+    
+    
+    
+@auth.route('/auth/confirm-reset', methods=["POST"]) 
+def confirm_reset():
+    '''
+    '''
+
+    request_get_json = request.get_json()
+    reset_token = request_get_json.get('token','')
+
+    ts = URLSafeTimedSerializer(SECRET_KEY_RESET_PWD)
+    max_age_sec = 3600 * 24 * 100 # 100 jours
+    email_decoded_from_token = ts.loads(reset_token, salt="reset-pwd", max_age=max_age_sec)
+
+    session = current_app.session
+    
+    try:
+        user = session.query(User).filter(User.email == email_decoded_from_token).one()
+    except:         
+        responseObject = {'message': 'Bad token'}
+        return make_response(jsonify(responseObject), 401)        
+    else:
+        
+        if not user.is_activated:
+            responseObject = {'message': 'user is not activated'}
+            return make_response(jsonify(responseObject), 401)                
+        
+        else:
+            # User password is updated
+            new_password = request_get_json.get('password')
+            encrypted_password = g.bcrypt.generate_password_hash(new_password, BCRYPT_LOG_ROUNDS).decode()
+            user.password = encrypted_password
+            if not user.email_confirmed:
+                user.email_confirmed = True
+            
+            session.commit()
+            
+            auth_token = encode_auth_token(user.id)
+            responseObject = {'message': 'password successfully changed', 'data': {'auth_token': auth_token}}
+            
+            return make_response(jsonify(responseObject), 200)  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
