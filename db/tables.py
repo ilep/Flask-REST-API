@@ -84,6 +84,14 @@ class Company(ExtendedBase, TimestampMixin):
 
 
 
+user_role_association_table = Table(
+    "user_role",
+    Base.metadata,
+    Column("user_id", ForeignKey('user.id', ondelete='CASCADE')), # primary_key=True
+    Column("role_id", ForeignKey('role.id', ondelete='CASCADE')) # primary_key=True
+)
+
+
 
 class User(ExtendedBase, TimestampMixin):
     
@@ -105,9 +113,9 @@ class User(ExtendedBase, TimestampMixin):
     company_id = Column(Integer, ForeignKey('company.id'))
     company = relationship("Company", back_populates="users")
     
-    roles = relationship('Role', secondary = 'user_role')
+    roles = relationship('Role', secondary = user_role_association_table)
     
-
+    
 # Define the Role data-model
 class Role(ExtendedBase):
     
@@ -117,13 +125,9 @@ class Role(ExtendedBase):
     name = Column(String(50), unique=True)
     
 
-class UserRoles(ExtendedBase):
-    
-    __tablename__ = 'user_role'
-    
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
-    role_id = Column(Integer, ForeignKey('role.id', ondelete='CASCADE'))
+
+
+
 
 
 
