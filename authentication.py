@@ -13,7 +13,7 @@ import json
 from flask import Blueprint, g, current_app, make_response, request, render_template
 from flask.json import jsonify
 from .config import SECRET_KEY_JWT_ENCODE, BCRYPT_LOG_ROUNDS, SECRET_KEY_RESET_PWD, reset_pwd_url, NOREPLY_EMAIL
-from .db.tables import  check_blacklist, User, Company, BlacklistToken
+from .db.tables import  check_blacklist, User, Company, BlacklistToken, Role
 
 from webargs import fields
 from webargs.flaskparser import use_args
@@ -81,16 +81,11 @@ def email_exists(args):
 
 
 
-def init_category(email):
-    
+def init_role(email):
     l_staff = ['@company.fr']
-    
     is_staff = any([email.endswith(end) for end in l_staff])    
-    
-    if is_staff:
-        return 'staff'
-    else:
-        return 'client'
+    return 'staff' if is_staff else 'client'
+
 
 
 @auth.route('/auth/register', methods=['POST'])
@@ -117,19 +112,25 @@ def register():
         first_name = d_request.get('first_name', None)
         last_name = d_request.get('last_name', None)
         phone = d_request.get('phone', None)
-        category = d_request.get('category', init_category(email.lower())) 
+        
+        
         
         d_user = {
             'first_name': first_name, 
             'email':email,
             'password': encrypted_password,
-            'last_name': last_name, 
-            'category':category, 
+            'last_name': last_name,
             'phone': phone
         }
         
-        if category.lower() != 'staff': 
-            
+        try:
+            role, _ = get_or_create(session=session, model=Role, defaults=None, name=init_role(email))
+        except:
+            role = None
+        
+        d_user['roles'] = [role]
+        
+        if role.name.lower() != 'staff': 
             company_name = d_request.get('company', {}).get('company_name',None)
             siret =  d_request.get('company', {}).get('siret',None)
             d_company = {'company_name': company_name, 'siret':siret}       

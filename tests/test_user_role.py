@@ -25,11 +25,16 @@ session = Session()
 user, _ = get_or_create(session=session, model=User, defaults=None, email='')
 user.roles
 
-
 test_role = Role(name='client_premium')
-
 user.roles = [test_role]
 
 session.commit()
-
 session.close()
+
+
+
+Session = sessionmaker(bind = MYSQL_ENGINE)
+session = Session()    
+get_or_create(session=session, model=Role, defaults=None, name="clientbis")
+session.close()
+

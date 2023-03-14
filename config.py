@@ -20,6 +20,6 @@ MYSQL_ENGINE = get_engine_from_engine_str(MYSQL_ENGINE_STR)
 frontend_host = "https://www.yourfrontend.fr"
 reset_pwd_url = frontend_host + '/reinit-password'
 
-
+NOREPLY_EMAIL = "noreply@company.fr"
 
 
