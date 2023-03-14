@@ -15,7 +15,7 @@ import datetime
 import uuid
 
 
-from .tables import Company, User
+from .tables import Company, User, Role
 
 
 class CompanySchema(Schema):
@@ -28,7 +28,17 @@ class CompanySchema(Schema):
     def make_company(self, data, **kwargs):
         return Company(**data)
 
+
+
+class RoleSchema(Schema):
     
+    id = fields.Integer()
+    name = fields.Str()
+
+
+    @post_load
+    def make_role(self, data, **kwargs):     
+        return Role(**data)    
     
 class UserSchema(Schema):
     
@@ -49,14 +59,14 @@ class UserSchema(Schema):
     company_id = fields.Integer()    
     company = fields.Nested(CompanySchema, required=True)
 
+    roles = fields.List(fields.Nested(RoleSchema(exclude=('id',))))
+
     @post_load
     def make_user(self, data, **kwargs):     
         return User(**data)
 
 
-
-    
-    
+  
     
     
     
